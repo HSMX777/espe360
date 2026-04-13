@@ -2,13 +2,13 @@ import { initializeApp } from 'firebase/app';
 import { getAnalytics } from 'firebase/analytics';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBSk7ruB7-BjDIB2o_-URQBY9nDwFLcAro",
-  authDomain: "otavalo-360.firebaseapp.com",
-  projectId: "otavalo-360",
-  storageBucket: "otavalo-360.firebasestorage.app",
-  messagingSenderId: "1093266199447",
-  appId: "1:1093266199447:web:add6d3a9ae23654801aad2",
-  measurementId: "G-GVECJ4Z366"
+  apiKey: "AIzaSyCHpwqd9rW2QZFsZj5-Mm8AIQN2-PFyiIo",
+  authDomain: "espe360-738ae.firebaseapp.com",
+  projectId: "espe360-738ae",
+  storageBucket: "espe360-738ae.firebasestorage.app",
+  messagingSenderId: "929805023471",
+  appId: "1:929805023471:web:414f75faf08fc2c084c31a",
+  measurementId: "G-C9JGVWYZ7Z"
 };
 
 export const app = initializeApp(firebaseConfig);
