@@ -1,0 +1,189 @@
+.places-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  padding: 2.5rem 2rem 2rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+}
+
+.places-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2.5rem;
+  flex-shrink: 0;
+}
+
+.back-button {
+  background: #ffffff;
+  border: 1px solid var(--military-border);
+  color: var(--military-green);
+  border-radius: 999px;
+  padding: 0.6rem 1.2rem;
+  font-size: 0.85rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 140px;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.back-button:hover {
+  background: var(--military-green);
+  color: white;
+  border-color: var(--military-green);
+  transform: translateX(-4px);
+  box-shadow: 0 8px 16px rgba(63, 98, 18, 0.2);
+}
+
+.back-button:active {
+  transform: scale(0.95);
+}
+
+.places-title-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.places-title {
+  font-size: clamp(1.8rem, 4vw, 2.5rem);
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  color: var(--military-slate);
+  margin-bottom: 0.2rem;
+  line-height: 1;
+}
+
+.places-subtitle {
+  font-size: clamp(0.6rem, 1vw, 0.8rem);
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  color: var(--military-green);
+  text-transform: uppercase;
+}
+
+.places-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.place-card {
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid var(--military-border);
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.place-card:hover {
+  transform: translateY(-6px);
+  border-color: var(--military-green-light);
+  box-shadow: 0 16px 32px rgba(63, 98, 18, 0.12);
+}
+
+.place-img-wrapper {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.place-img-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.5;
+  filter: grayscale(100%);
+  transition: all 0.5s ease;
+}
+
+.place-card:hover .place-img-wrapper img {
+  opacity: 0.7;
+  filter: grayscale(0%);
+  transform: scale(1.08);
+}
+
+.place-img-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.4) 50%, transparent 100%);
+  pointer-events: none;
+}
+
+.place-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 1.2rem;
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.place-icon360 {
+  width: 32px;
+  height: 32px;
+  color: var(--military-green);
+  transition: all 0.3s ease;
+}
+
+.place-card:hover .place-icon360 {
+  transform: rotate(15deg) scale(1.1);
+  color: var(--military-green-light);
+}
+
+.place-name {
+  color: var(--military-slate);
+  font-size: 0.85rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-align: center;
+}
+
+.places-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--military-slate);
+  opacity: 0.5;
+  gap: 1rem;
+}
+
+.places-container::-webkit-scrollbar { width: 6px; }
+.places-container::-webkit-scrollbar-track { background: #f1f5f9; }
+.places-container::-webkit-scrollbar-thumb {
+  background: var(--military-green);
+  border-radius: 10px;
+}
+
+@media (max-width: 768px) { .places-grid { grid-template-columns: repeat(2, 1fr); gap: 1rem; } }
+@media (max-width: 480px) { 
+  .places-grid { grid-template-columns: 1fr; gap: 1.2rem; }
+  .places-container { padding: 1.5rem 1rem; }
+  .places-header { flex-direction: column; gap: 1.5rem; text-align: center; }
+  .back-button { width: 100%; order: 2; }
+}

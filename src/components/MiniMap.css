@@ -1,0 +1,158 @@
+.minimap-wrapper {
+  position: absolute;
+  bottom: 120px;
+  left: 20px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.minimap-container {
+  width: 180px;
+  height: 180px;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.minimap-wrapper.expanded .minimap-container {
+  width: 450px;
+  height: 450px;
+  border-radius: 20px;
+}
+
+.minimap-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* Para no deformar el mapa base */
+  opacity: 0.85;
+}
+
+/* Markers */
+.minimap-point, .minimap-current-marker {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 14px;
+  height: 14px;
+  z-index: 2;
+  cursor: pointer;
+  transition: width 0.3s, height 0.3s;
+}
+
+.minimap-point.collapsed-point {
+  width: 6px;
+  height: 6px;
+}
+
+.minimap-point.collapsed-point.active {
+  width: 10px;
+  height: 10px;
+}
+
+.point-dot, .marker-dot {
+  width: 100%;
+  height: 100%;
+  background: #fff;
+  border-radius: 50%;
+  border: 2px solid #333;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+  transition: all 0.3s ease;
+}
+
+.minimap-point.active .point-dot {
+  background: var(--color-accent, #d4af37);
+  box-shadow: 0 0 15px var(--color-accent, #d4af37);
+}
+
+.marker-dot {
+  background: var(--color-accent, #d4af37);
+}
+
+.point-pulse, .marker-pulse {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: var(--color-accent, #d4af37);
+  opacity: 0.5;
+  animation: minimap-pulse 2s infinite;
+  pointer-events: none;
+}
+
+@keyframes minimap-pulse {
+  0% { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(3.5); opacity: 0; }
+}
+
+/* Toggle Button */
+.minimap-toggle {
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  padding: 6px 15px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.minimap-toggle:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Responsive/* Adjustments for mini map conflict */
+@media (max-width: 768px) {
+  .gallery-strip {
+    height: 110px;
+    padding: 10px 5px;
+  }
+  
+  .gallery-item {
+    flex: 0 0 120px;
+    height: 80px;
+  }
+
+  .node-gallery-wrapper.closed {
+    transform: translateY(110px);
+  }
+
+  .gallery-toggle {
+    padding: 6px 20px;
+  }
+
+  .minimap-wrapper {
+    bottom: 110px;
+    left: 10px;
+  }
+  
+  .minimap-container {
+    width: 120px;
+    height: 120px;
+  }
+  
+  .minimap-wrapper.expanded .minimap-container {
+    width: 280px;
+    height: 280px;
+  }
+
+  .minimap-point.collapsed-point {
+    width: 4px;
+    height: 4px;
+  }
+}
+
