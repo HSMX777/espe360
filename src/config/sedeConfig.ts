@@ -25,7 +25,7 @@ export const SEDE_CONFIGS: Record<string, SedeConfig> = {
   'esforce': {
     id: 'esforce',
     nombre: 'ESFORCE',
-    nombreCorto: 'ESFORCE Ambato',
+    nombreCorto: 'ESFORCE',
     ciudad: 'Ambato',
     provincia: 'Tungurahua',
     color: '#0a0a0a',
@@ -36,8 +36,8 @@ export const SEDE_CONFIGS: Record<string, SedeConfig> = {
   },
   'esmel': {
     id: 'esmel',
-    nombre: 'ESMEL',
-    nombreCorto: 'ESMEL',
+    nombre: 'ESMIL',
+    nombreCorto: 'ESMIL',
     ciudad: 'Quito',
     provincia: 'Pichincha',
     color: '#1a2e05',

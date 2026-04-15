@@ -8,7 +8,7 @@ export const ESMEL_PLACES: Place360[] = [
     name: 'Acceso Principal 1', 
     imageFileName: 'acceso_1.JPG',
     category: 'Administración y Bienvenida',
-    description: 'Entrada principal a la Escuela de Misiones Especiales (ESMEL) en Quito. Punto de control y bienvenida.',
+    description: 'Entrada principal a la Escuela de Misiones Especiales (ESMIL) en Quito. Punto de control y bienvenida.',
     mapCoords: { x: 50, y: 92 },
     hotspots: [
       { id: 'hs_a1_a2', yaw: 0, pitch: 0, targetPlaceId: 'esmel_a2', label: 'Avanzar al Patio' },

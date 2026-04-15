@@ -127,10 +127,6 @@
     height: 80px;
   }
 
-  .node-gallery-wrapper.closed {
-    transform: translateY(110px);
-  }
-
   .gallery-toggle {
     padding: 6px 20px;
   }
