@@ -115,7 +115,7 @@ export const SEDE_CONFIGS: Record<string, SedeConfig> = {
     color: '#064e3b',
     acento: '#65a30d',
     basePath: '360_IWIAS',
-    mapImage: '/map_espe_sd.png', // Temporary Tropical Map
+    mapImage: '/map_iwias_puyo.png',
     places: IWIAS_PLACES
   },
   'belisario': {
@@ -127,7 +127,7 @@ export const SEDE_CONFIGS: Record<string, SedeConfig> = {
     color: '#0891b2',
     acento: '#22d3ee',
     basePath: '360_BELISARIO',
-    mapImage: '/map_etfa_latacunga.png', // Temporary Technical Map
+    mapImage: '/map_belisario_latacunga.png',
     places: BELISARIO_PLACES
   }
 };

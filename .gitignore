@@ -21,7 +21,7 @@ dist-ssr
 *.ntvs*
 *.njsproj
 *.sln
-# Large directories
-imagenes/
-public/imagenes/
-public/360_*/
+# Large directories are now included for backup
+# imagenes/
+# public/imagenes/
+# public/360_*/
