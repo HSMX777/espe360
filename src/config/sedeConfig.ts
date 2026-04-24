@@ -7,6 +7,10 @@ import { IASA_PLACES } from '../data/iasaPlaces';
 import { IDIOMAS_PLACES } from '../data/idiomasPlaces';
 import { IWIAS_PLACES } from '../data/iwiasPlaces';
 import { BELISARIO_PLACES } from '../data/belisarioPlaces';
+import { ESMA_PLACES } from '../data/esmaPlaces';
+import { ESMENA_PLACES } from '../data/esmenaPlaces';
+import { ESPE_LATACUNGA_PLACES } from '../data/espeLatacungaPlaces';
+import { ESSUNA_PLACES } from '../data/essunaPlaces';
 
 export interface SedeConfig {
   id: string;
@@ -129,5 +133,53 @@ export const SEDE_CONFIGS: Record<string, SedeConfig> = {
     basePath: '360_BELISARIO',
     mapImage: '/map_belisario_latacunga.png',
     places: BELISARIO_PLACES
+  },
+  'esma-salinas': {
+    id: 'esma-salinas',
+    nombre: 'ESMA Salinas',
+    nombreCorto: 'ESMA Salinas',
+    ciudad: 'Salinas',
+    provincia: 'Santa Elena',
+    color: '#0a1628',
+    acento: '#60a5fa',
+    basePath: '360_ESMA',
+    mapImage: '/map_esma_salinas.png',
+    places: ESMA_PLACES
+  },
+  'esmena-guayaquil': {
+    id: 'esmena-guayaquil',
+    nombre: 'ESMENA Guayaquil',
+    nombreCorto: 'ESMENA Guayaquil',
+    ciudad: 'Guayaquil',
+    provincia: 'Guayas',
+    color: '#0a1e1e',
+    acento: '#2dd4bf',
+    basePath: '360_ESMENA',
+    mapImage: '/map_esmena_guayaquil.png',
+    places: ESMENA_PLACES
+  },
+  'espe-latacunga': {
+    id: 'espe-latacunga',
+    nombre: 'ESPE Latacunga',
+    nombreCorto: 'ESPE Latacunga',
+    ciudad: 'Latacunga',
+    provincia: 'Cotopaxi',
+    color: '#1a1f2e',
+    acento: '#f59e0b',
+    basePath: '360_ESPE_LATACUNGA',
+    mapImage: '/map_espe_latacunga.png',
+    places: ESPE_LATACUNGA_PLACES
+  },
+  'essuna-salinas': {
+    id: 'essuna-salinas',
+    nombre: 'ESSUNA Salinas',
+    nombreCorto: 'ESSUNA Salinas',
+    ciudad: 'Salinas',
+    provincia: 'Santa Elena',
+    color: '#051525',
+    acento: '#38bdf8',
+    basePath: '360_ESSUNA',
+    mapImage: '/map_essuna_salinas.png',
+    places: ESSUNA_PLACES
   }
 };
