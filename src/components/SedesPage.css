@@ -18,7 +18,7 @@
 }
 
 .sedes-title {
-  font-size: clamp(2.2rem, 5vw, 3.5rem);
+  font-size: 35px;
   font-weight: 900;
   color: var(--military-slate);
   letter-spacing: -0.02em;
@@ -27,7 +27,7 @@
 }
 
 .sedes-subtitle {
-  font-size: clamp(0.7rem, 1.4vw, 0.95rem);
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.3em;
   color: var(--military-green);
@@ -123,7 +123,7 @@
 }
 
 .sede-nombre {
-  font-size: 1rem;
+  font-size: 18px;
   font-weight: 800;
   color: var(--military-slate);
   text-transform: uppercase;
@@ -133,7 +133,7 @@
 }
 
 .sede-ciudad {
-  font-size: 0.75rem;
+  font-size: 14px;
   font-weight: 600;
   color: var(--military-green);
   text-transform: uppercase;

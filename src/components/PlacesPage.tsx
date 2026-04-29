@@ -1,32 +1,48 @@
-import { type Sede } from './SedesPage';
+import { useNavigate, useParams } from 'react-router-dom';
+import { SEDE_CONFIGS } from '../config/sedeConfig';
 import { type Place360 } from '../data/esforcePlaces';
+import { slugify } from '../utils/slugify';
 import './PlacesPage.css';
 
-interface Props {
-  sede: Sede;
-  onBack: () => void;
-  onPlaceSelect: (place: Place360) => void;
-}
+export default function PlacesPage() {
+  const { sedeId } = useParams<{ sedeId: string }>();
+  const navigate = useNavigate();
 
-export default function PlacesPage({ sede, onBack, onPlaceSelect }: Props) {
+  const sede = sedeId ? SEDE_CONFIGS[sedeId] : null;
+
+  if (!sede) {
+    return (
+      <div className="places-container">
+        <div className="places-empty">
+          <h2>Sede no encontrada</h2>
+          <button onClick={() => navigate('/sedes')}>Volver a Sedes</button>
+        </div>
+      </div>
+    );
+  }
+
   const places = sede.places || [];
   const isAvailable = places.length > 0;
+
+  const handlePlaceSelect = (place: Place360) => {
+    navigate(`/${sedeId}/${slugify(place.name)}`);
+  };
 
   return (
     <div className="places-container">
       {/* Header */}
       <div className="places-header">
-        <button className="back-button" onClick={onBack}>
+        <button className="back-button" onClick={() => navigate('/sedes')}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6"></polyline>
           </svg>
           Volver
         </button>
         <div className="places-title-container">
-          <h1 className="places-title" style={{ color: sede.acento }}>{sede.nombreCorto}</h1>
+          <h1 className="places-title" style={{ color: sede.acento }}>{sede.nombre}</h1>
           <p className="places-subtitle">LUGARES EN 360°</p>
         </div>
-        <div style={{ width: '100px' }} /> {/* Espacio para equilibrar flex */}
+        <div style={{ width: '100px' }} />
       </div>
 
       {/* Content */}
@@ -40,10 +56,9 @@ export default function PlacesPage({ sede, onBack, onPlaceSelect }: Props) {
               <button
                 key={place.id}
                 className="place-card"
-                onClick={() => onPlaceSelect(place)}
+                onClick={() => handlePlaceSelect(place)}
                 style={{ '--acento': sede.acento } as React.CSSProperties}
               >
-                {/* Fallback to full image if thumbnails don't exist yet */}
                 <div className="place-img-wrapper">
                   <img 
                     src={thumbUrl} 
@@ -77,7 +92,7 @@ export default function PlacesPage({ sede, onBack, onPlaceSelect }: Props) {
             <line x1="12" y1="17" x2="12.01" y2="17" strokeLinecap="round" />
           </svg>
           <h2>Próximamente</h2>
-          <p>Los recorridos 360° para la sede {sede.nombreCorto} están en desarrollo.</p>
+          <p>Los recorridos 360° para la sede {sede.nombre} están en desarrollo.</p>
         </div>
       )}
     </div>

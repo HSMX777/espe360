@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Montserrat:wght@300;400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&display=swap');
 @import '@photo-sphere-viewer/core/index.css';
 
 *, *::before, *::after {
@@ -8,12 +8,12 @@
 }
 
 :root {
-  --military-green: #3f6212;
-  --military-green-light: #4d7c0f;
-  --military-slate: #1e293b;
-  --military-gold: #b45309;
+  --military-green: #00723D;
+  --military-green-light: #008a4a;
+  --military-slate: #4D4D4D;
+  --military-gold: #00723D;
   --military-bg: #ffffff;
-  --military-text: #0f172a;
+  --military-text: #4D4D4D;
   --military-border: #e2e8f0;
 }
 
@@ -26,6 +26,47 @@ html, body, #root {
 }
 
 body {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Helvetica', Arial, sans-serif;
+  font-size: 16px;
   -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6, .title, .subtitle {
+  color: var(--military-green);
+}
+
+h1, .title {
+  font-size: 35px;
+}
+
+h2, .subtitle {
+  font-size: 14px;
+}
+
+p, .text {
+  font-size: 16px;
+}
+
+a, a:visited {
+  color: var(--military-green);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--military-green-light);
+}
+
+button {
+  background-color: var(--military-green);
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: var(--military-green-light);
+}
+
+.icon, svg {
+  color: var(--military-green);
 }

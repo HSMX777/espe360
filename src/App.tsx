@@ -1,17 +1,17 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, useNavigate, useParams } from 'react-router-dom';
 import Particles, { initParticlesEngine } from '@tsparticles/react';
 import { loadSlim } from '@tsparticles/slim';
 import type { Container } from '@tsparticles/engine';
-import logoEspe from './assets/logo_espe.png';
-import SedesPage, { type Sede } from './components/SedesPage';
+import logoEspe from './assets/logo_espe_black.webp';
+import SedesPage from './components/SedesPage';
 import PlacesPage from './components/PlacesPage';
 import Viewer360 from './components/Viewer360';
-import { SEDE_CONFIGS } from './config/sedeConfig';
-import { type Place360 } from './data/esforcePlaces';
+import AdminPanel from './components/AdminPanel';
 import './index.css';
 import './components/HomePage.css';
 
-// ── Exact same particles config as totem_otavalo_ecuador ──────────────────────
+// ── Particles config ──────────────────────────────────────────────────────────
 const particlesConfig = {
   fullScreen: { enable: false, zIndex: 0 },
   background: { color: { value: 'transparent' } },
@@ -27,25 +27,25 @@ const particlesConfig = {
       repulse: { distance: 200, duration: 0.4 },
     },
   },
-    particles: {
-    color: { value: ['#3f6212', '#1e293b', '#b45309'] },
+  particles: {
+    color: { value: ['#4D4D4D', '#666666', '#808080'] },
     links: {
-      color: '#4d7c0f',
+      color: '#4D4D4D',
       distance: 150,
       enable: true,
       opacity: 0.2,
       width: 1,
-      triangles: { enable: true, color: '#1e293b', opacity: 0.1 },
+      triangles: { enable: true, color: '#4D4D4D', opacity: 0.1 },
     },
     move: {
       direction: 'none',
       enable: true,
       outModes: { default: 'out' },
       random: true,
-      speed: 0.8,
+      speed: 2.5,
       straight: false,
     },
-    number: { density: { enable: true, area: 800 }, value: 120 },
+    number: { density: { enable: true, area: 800 }, value: 200 },
     opacity: {
       value: { min: 0.1, max: 0.6 },
       animation: { enable: true, speed: 1, minimumValue: 0.1, sync: false },
@@ -58,18 +58,9 @@ const particlesConfig = {
   },
   detectRetina: true,
 };
-// ─────────────────────────────────────────────────────────────────────────────
 
-type Screen = 'home' | 'sedes' | 'places_list' | 'viewer360';
-
-export default function App() {
-  const [screen, setScreen] = useState<Screen>('home');
-  const [fadeState, setFadeState] = useState<'in' | 'out'>('in');
+function ParticlesBackground() {
   const [particlesInit, setParticlesInit] = useState(false);
-  
-  // App Selection State
-  const [selectedSede, setSelectedSede] = useState<Sede | null>(null);
-  const [selectedPlace, setSelectedPlace] = useState<Place360 | null>(null);
 
   useEffect(() => {
     initParticlesEngine(async (engine) => {
@@ -79,100 +70,77 @@ export default function App() {
 
   const particlesLoaded = useCallback(async (_container?: Container) => {}, []);
 
-  const navigateTo = (next: Screen) => {
-    setFadeState('out');
-    setTimeout(() => {
-      setScreen(next);
-      setFadeState('in');
-    }, 320);
-  };
-
-  const handleSedeSelect = (sede: Sede) => {
-    setSelectedSede(sede);
-    navigateTo('places_list');
-  };
-
-  const handlePlaceSelect = (place: Place360) => {
-    setSelectedPlace(place);
-    navigateTo('viewer360');
-  };
-
-  const getPlacesForSede = (sedeId: string) => {
-    return SEDE_CONFIGS[sedeId]?.places || [];
-  };
-
-  const handleHotspotNavigate = (targetPlaceId: string) => {
-    if (!selectedSede) return;
-    const currentPlaces = getPlacesForSede(selectedSede.id);
-    const nextPlace = currentPlaces.find(p => p.id === targetPlaceId);
-    if (nextPlace) {
-      setFadeState('out');
-      setTimeout(() => {
-        setSelectedPlace(nextPlace);
-        setFadeState('in');
-      }, 320);
-    }
-  };
+  if (!particlesInit) return null;
 
   return (
-    <div className="home-container">
-      {/* Radial background glow */}
+    <Particles
+      id="tsparticles"
+      options={particlesConfig as any}
+      particlesLoaded={particlesLoaded}
+      className="particles-canvas"
+    />
+  );
+}
+
+function HomePage() {
+  const navigate = useNavigate();
+
+  return (
+    <div className="home-container" onClick={() => navigate('/sedes')}>
       <div className="bg-radial-glow" />
-
-      {/* Global particles — always visible */}
-      {particlesInit && (
-        <Particles
-          id="tsparticles"
-          options={particlesConfig as any}
-          particlesLoaded={particlesLoaded}
-          className="particles-canvas"
-        />
-      )}
-
-      {/* Screen content with fade transition */}
-      <div
-        className="screen-wrapper"
-        style={{
-          opacity: fadeState === 'in' ? 1 : 0,
-          transition: 'opacity 0.32s ease',
-        }}
-      >
-        {screen === 'home' && (
-          <div
-            className="home-content"
-            style={{ cursor: 'pointer' }}
-            onClick={() => navigateTo('sedes')}
-          >
-            <div className="logo-wrapper">
-              <img src={logoEspe} alt="ESPE – Nuestro Mundo" className="logo-image" />
-            </div>
-            <div className="divider" />
-            <p className="cta-text">Toca la pantalla para comenzar</p>
+      <ParticlesBackground />
+      <div className="screen-wrapper" style={{ cursor: 'pointer' }}>
+        <div className="home-content">
+          <div className="logo-wrapper">
+            <img src={logoEspe} alt="ESPE – Nuestro Mundo" className="logo-image" />
           </div>
-        )}
-
-        {screen === 'sedes' && (
-          <SedesPage onSedeSelect={handleSedeSelect} />
-        )}
-
-        {screen === 'places_list' && selectedSede && (
-          <PlacesPage 
-            sede={selectedSede} 
-            onPlaceSelect={handlePlaceSelect} 
-            onBack={() => navigateTo('sedes')} 
-          />
-        )}
-
-        {screen === 'viewer360' && selectedPlace && (
-          <Viewer360 
-            key={selectedPlace.id}
-            place={selectedPlace} 
-            sede={selectedSede}
-            onBack={() => navigateTo('places_list')} 
-            onNavigate={handleHotspotNavigate}
-          />
-        )}
+          <div className="divider" />
+          <p className="cta-text">Toca la pantalla para comenzar</p>
+        </div>
       </div>
     </div>
+  );
+}
+
+function AppShell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="home-container" style={{ cursor: 'default' }}>
+      <div className="bg-radial-glow" />
+      <ParticlesBackground />
+      <div className="screen-wrapper" style={{ alignItems: 'stretch', justifyContent: 'stretch' }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// Wrappers to force remount on place change, preventing state bleed between views
+function Viewer360Wrapper() {
+  const { placeSlug } = useParams<{ placeSlug: string }>();
+  return <Viewer360 key={placeSlug || 'default'} />;
+}
+
+function AdminPanelWrapper() {
+  const { placeSlug } = useParams<{ placeSlug: string }>();
+  return <AdminPanel key={placeSlug || 'admin'} />;
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/sedes" element={<AppShell><SedesPage /></AppShell>} />
+        
+        {/* Admin Routes */}
+        <Route path="/admin" element={<AdminPanelWrapper />} />
+        <Route path="/admin/:sedeId" element={<AdminPanelWrapper />} />
+        <Route path="/admin/:sedeId/:placeSlug" element={<AdminPanelWrapper />} />
+
+        {/* Public Routes */}
+        <Route path="/:sedeId" element={<AppShell><PlacesPage /></AppShell>} />
+        <Route path="/:sedeId/:placeSlug" element={<Viewer360Wrapper />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
