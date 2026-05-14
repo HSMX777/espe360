@@ -125,7 +125,56 @@ function Viewer360Wrapper() {
 }
 
 function AdminPanelWrapper() {
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    sessionStorage.getItem('adminAuth') === 'true'
+  );
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+
   const { placeSlug } = useParams<{ placeSlug: string }>();
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (username === 'admin' && password === 'Admin2026!!') {
+      sessionStorage.setItem('adminAuth', 'true');
+      setIsAuthenticated(true);
+      setError('');
+    } else {
+      setError('Credenciales incorrectas');
+    }
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', width: '100%' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'white', background: 'rgba(0,0,0,0.5)', padding: '2.5rem', borderRadius: '12px', backdropFilter: 'blur(10px)', width: '100%', maxWidth: '400px', border: '1px solid rgba(255,255,255,0.1)' }}>
+          <h2 style={{ marginBottom: '1.5rem', textAlign: 'center', fontSize: '1.5rem', fontWeight: 'bold' }}>Acceso Administrativo</h2>
+          {error && <p style={{ color: '#ff4d4d', marginBottom: '1rem', fontSize: '0.9rem', textAlign: 'center' }}>{error}</p>}
+          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', width: '100%', gap: '1rem' }}>
+            <input 
+              type="text" 
+              placeholder="Usuario" 
+              value={username}
+              onChange={e => setUsername(e.target.value)}
+              style={{ padding: '0.75rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.1)', color: 'white', outline: 'none' }}
+            />
+            <input 
+              type="password" 
+              placeholder="Contraseña" 
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              style={{ padding: '0.75rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.1)', color: 'white', outline: 'none' }}
+            />
+            <button type="submit" style={{ padding: '0.75rem', borderRadius: '6px', border: 'none', background: '#ffffff', color: '#000000', fontWeight: 'bold', cursor: 'pointer', marginTop: '0.5rem', transition: 'background 0.2s' }}>
+              Ingresar
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   return <AdminPanel key={placeSlug || 'admin'} />;
 }
 

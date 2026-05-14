@@ -42,34 +42,49 @@ export default function Viewer360() {
 
   const [globalPlaceNames, setGlobalPlaceNames] = useState<Record<string, string>>({});
   const [deletedNodes, setDeletedNodes] = useState<Set<string>>(new Set());
+  const [dynamicNodes, setDynamicNodes] = useState<any[]>([]);
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, 'hotspots'), (snapshot) => {
       const names: Record<string, string> = {};
       const deleted = new Set<string>();
+      const dynamic: any[] = [];
       snapshot.docs.forEach(doc => {
         const data = doc.data();
         if (data.placeName) names[doc.id] = data.placeName;
         if (data.deleted === true) deleted.add(doc.id);
+        if (data.isDynamic === true && data.sedeId === sedeId) {
+          dynamic.push({
+            id: doc.id,
+            name: data.placeName || data.name,
+            category: data.category || '',
+            imageFileName: data.imageFileName || '',
+            description: data.description || '',
+            hotspots: data.markers || []
+          });
+        }
       });
       setGlobalPlaceNames(names);
       setDeletedNodes(deleted);
+      setDynamicNodes(dynamic);
     });
     return () => unsubscribe();
-  }, []);
+  }, [sedeId]);
 
   const sedeRaw = sedeId ? SEDE_CONFIGS[sedeId] : null;
 
   const sede = useMemo(() => {
     if (!sedeRaw) return null;
+    const staticPlaces = sedeRaw.places.filter(p => !deletedNodes.has(p.id)).map(p => ({
+      ...p,
+      name: globalPlaceNames[p.id] || p.name
+    }));
+
     return {
       ...sedeRaw,
-      places: sedeRaw.places.filter(p => !deletedNodes.has(p.id)).map(p => ({
-        ...p,
-        name: globalPlaceNames[p.id] || p.name
-      }))
+      places: [...staticPlaces, ...dynamicNodes]
     };
-  }, [sedeRaw, globalPlaceNames, deletedNodes]);
+  }, [sedeRaw, globalPlaceNames, deletedNodes, dynamicNodes]);
 
   const place = useMemo(() => {
     if (!sede || !placeSlug) return null;
@@ -116,7 +131,7 @@ export default function Viewer360() {
   // 2. Logic to actually draw markers
   const syncMarkersToPlugin = useCallback(() => {
     if (markersPluginRef.current) {
-      const formattedMarkers = allHotspots.map(hs => ({
+      const formattedMarkers = allHotspots.map((hs: any) => ({
         id: hs.id,
         position: { yaw: hs.yaw, pitch: hs.pitch },
         html: hs.type === 'label' ? LABEL_PIN_HTML : NAV_PIN_HTML,
@@ -210,7 +225,9 @@ export default function Viewer360() {
   }
 
   const basePath = sede.basePath;
-  const imageUrl = `/${basePath}/${encodeURIComponent(place.imageFileName)}`;
+  const imageUrl = place.imageFileName.startsWith('http') 
+    ? place.imageFileName 
+    : `/${basePath}/${encodeURIComponent(place.imageFileName)}`;
 
   return (
     <div className="viewer-container">

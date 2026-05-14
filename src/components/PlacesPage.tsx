@@ -13,34 +13,49 @@ export default function PlacesPage() {
 
   const [globalPlaceNames, setGlobalPlaceNames] = useState<Record<string, string>>({});
   const [deletedNodes, setDeletedNodes] = useState<Set<string>>(new Set());
+  const [dynamicNodes, setDynamicNodes] = useState<any[]>([]);
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, 'hotspots'), (snapshot) => {
       const names: Record<string, string> = {};
       const deleted = new Set<string>();
+      const dynamic: any[] = [];
       snapshot.docs.forEach(doc => {
         const data = doc.data();
         if (data.placeName) names[doc.id] = data.placeName;
         if (data.deleted === true) deleted.add(doc.id);
+        if (data.isDynamic === true && data.sedeId === sedeId) {
+          dynamic.push({
+            id: doc.id,
+            name: data.placeName || data.name,
+            category: data.category || '',
+            imageFileName: data.imageFileName || '',
+            description: data.description || '',
+            hotspots: data.markers || []
+          });
+        }
       });
       setGlobalPlaceNames(names);
       setDeletedNodes(deleted);
+      setDynamicNodes(dynamic);
     });
     return () => unsubscribe();
-  }, []);
+  }, [sedeId]);
 
   const sedeRaw = sedeId ? SEDE_CONFIGS[sedeId] : null;
 
   const sede = useMemo(() => {
     if (!sedeRaw) return null;
+    const staticPlaces = sedeRaw.places.filter(p => !deletedNodes.has(p.id)).map(p => ({
+      ...p,
+      name: globalPlaceNames[p.id] || p.name
+    }));
+
     return {
       ...sedeRaw,
-      places: sedeRaw.places.filter(p => !deletedNodes.has(p.id)).map(p => ({
-        ...p,
-        name: globalPlaceNames[p.id] || p.name
-      }))
+      places: [...staticPlaces, ...dynamicNodes]
     };
-  }, [sedeRaw, globalPlaceNames, deletedNodes]);
+  }, [sedeRaw, globalPlaceNames, deletedNodes, dynamicNodes]);
 
   if (!sede) {
     return (
@@ -82,7 +97,9 @@ export default function PlacesPage() {
         <div className="places-grid">
           {places.map((place, index) => {
             const basePath = sede.basePath;
-            const thumbUrl = `/${basePath}/thumbnails/${encodeURIComponent(place.imageFileName)}`;
+            const thumbUrl = place.imageFileName.startsWith('http')
+              ? place.imageFileName
+              : `/${basePath}/thumbnails/${encodeURIComponent(place.imageFileName)}`;
             
             return (
               <button

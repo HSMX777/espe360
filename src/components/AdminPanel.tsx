@@ -4,13 +4,13 @@ import { SEDE_CONFIGS } from '../config/sedeConfig';
 import { findPlaceBySlug, slugify } from '../utils/slugify';
 import HotspotEditor from './HotspotEditor';
 import MinimapEditor from './MinimapEditor';
-import { db } from '../firebase';
-
 import { collection, onSnapshot, doc, setDoc, deleteDoc, addDoc, query, where } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '../firebase';
 import campusBg from '../assets/campus_bg.png';
 import './Admin.css';
 
-type AdminMode = 'selection' | 'nodes' | 'categories' | 'ordering' | 'minimap';
+type AdminMode = 'selection' | 'nodes' | 'categories' | 'ordering' | 'minimap' | 'add-node';
 
 export default function AdminPanel() {
   const { sedeId, placeSlug } = useParams<{ sedeId: string; placeSlug: string }>();
@@ -21,20 +21,38 @@ export default function AdminPanel() {
   const [adminMode, setAdminMode] = useState<AdminMode>('selection');
   const [categories, setCategories] = useState<any[]>([]);
   const [newCategoryName, setNewCategoryName] = useState('');
+  const [newNode, setNewNode] = useState({ name: '', category: '', imageFileName: '', description: '' });
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const sedes = Object.values(SEDE_CONFIGS);
   const selectedSedeRaw = sedeId ? SEDE_CONFIGS[sedeId] : null;
 
   const selectedSede = useMemo(() => {
     if (!selectedSedeRaw) return null;
+    
+    // Get dynamic nodes for this sede
+    const currentDynamicNodes = Object.entries(nodeMetadata)
+      .filter(([_, data]) => data.isDynamic && data.sedeId === sedeId)
+      .map(([id, data]) => ({
+        id,
+        name: data.placeName || data.name,
+        category: data.category || '',
+        imageFileName: data.imageFileName || '',
+        description: data.description || '',
+        hotspots: data.markers || []
+      }));
+
+    const staticPlaces = selectedSedeRaw.places.filter(p => !deletedNodes.has(p.id)).map(p => ({
+      ...p,
+      name: globalPlaceNames[p.id] || p.name
+    }));
+
     return {
       ...selectedSedeRaw,
-      places: selectedSedeRaw.places.filter(p => !deletedNodes.has(p.id)).map(p => ({
-        ...p,
-        name: globalPlaceNames[p.id] || p.name
-      }))
+      places: [...staticPlaces, ...currentDynamicNodes]
     };
-  }, [selectedSedeRaw, globalPlaceNames, deletedNodes]);
+  }, [selectedSedeRaw, globalPlaceNames, deletedNodes, nodeMetadata, sedeId]);
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, 'hotspots'), (snapshot) => {
@@ -109,6 +127,50 @@ export default function AdminPanel() {
       name: newCategoryName.trim()
     });
     setNewCategoryName('');
+  };
+
+  const handleAddNode = async () => {
+    if (!newNode.name || !sedeId) {
+      alert('Por favor completa el nombre del lugar.');
+      return;
+    }
+
+    if (!selectedFile) {
+      alert('Por favor selecciona una imagen 360°.');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      let finalImageUrl = '';
+
+      if (selectedFile) {
+        const fileRef = ref(storage, `360_uploads/${sedeId}/${Date.now()}_${selectedFile.name}`);
+        const snapshot = await uploadBytes(fileRef, selectedFile);
+        finalImageUrl = await getDownloadURL(snapshot.ref);
+      }
+
+      const id = slugify(newNode.name) + '-' + Date.now();
+      await setDoc(doc(db, 'hotspots', id), {
+        ...newNode,
+        imageFileName: finalImageUrl,
+        id,
+        sedeId,
+        isDynamic: true,
+        markers: [],
+        placeName: newNode.name
+      });
+
+      setNewNode({ name: '', category: '', imageFileName: '', description: '' });
+      setSelectedFile(null);
+      setAdminMode('selection');
+      alert('Nodo agregado con éxito.');
+    } catch (error) {
+      console.error('Error adding node:', error);
+      alert('Error al guardar el nodo.');
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleUpdateCategory = async (id: string, name: string) => {
@@ -208,6 +270,13 @@ export default function AdminPanel() {
                   <p>Sube una imagen del mapa y ajusta la posición de cada lugar sobre él.</p>
                 </div>
               </button>
+              <button className="mode-option-card" onClick={() => setAdminMode('add-node')}>
+                <div className="mode-icon">➕</div>
+                <div className="mode-info">
+                  <h3>Agregar Nuevo Nodo</h3>
+                  <p>Crea un nuevo punto en el recorrido 360° para esta sede.</p>
+                </div>
+              </button>
             </div>
           )}
 
@@ -303,6 +372,81 @@ export default function AdminPanel() {
               sede={selectedSede}
               onBack={() => setAdminMode('selection')}
             />
+          )}
+
+          {adminMode === 'add-node' && (
+            <div className="admin-add-node">
+              <div className="admin-controls-card">
+                <div className="manager-header">
+                  <h3>Agregar Nuevo Nodo</h3>
+                  <button className="admin-btn-back-mode" onClick={() => setAdminMode('selection')}>Volver</button>
+                </div>
+                
+                <div className="add-node-form" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1.5rem' }}>
+                  <div className="control-group">
+                    <label>Nombre del Lugar:</label>
+                    <input 
+                      type="text" 
+                      placeholder="Ej: Biblioteca Central" 
+                      value={newNode.name}
+                      onChange={e => setNewNode({...newNode, name: e.target.value})}
+                      className="admin-input"
+                    />
+                  </div>
+
+                  <div className="control-group">
+                    <label>Categoría:</label>
+                    <select 
+                      value={newNode.category}
+                      onChange={e => setNewNode({...newNode, category: e.target.value})}
+                      className="admin-select"
+                    >
+                      <option value="">-- Seleccionar Categoría --</option>
+                      {categories.map(cat => (
+                        <option key={cat.id} value={cat.name}>{cat.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="control-group">
+                    <label>Imagen 360° (Desde tu PC):</label>
+                    <input 
+                      type="file" 
+                      accept="image/*"
+                      onChange={e => setSelectedFile(e.target.files?.[0] || null)}
+                      className="admin-input"
+                      style={{ padding: '0.5rem' }}
+                    />
+                    {selectedFile && (
+                      <p style={{ fontSize: '0.8rem', color: '#10b981', marginTop: '0.3rem' }}>
+                        Archivo seleccionado: {selectedFile.name}
+                      </p>
+                    )}
+                  </div>
+
+
+                  <div className="control-group">
+                    <label>Descripción (Opcional):</label>
+                    <textarea 
+                      placeholder="Breve descripción del lugar..." 
+                      value={newNode.description}
+                      onChange={e => setNewNode({...newNode, description: e.target.value})}
+                      className="admin-input"
+                      style={{ minHeight: '100px', resize: 'vertical' }}
+                    />
+                  </div>
+
+                  <button 
+                    onClick={handleAddNode} 
+                    className="admin-btn-add" 
+                    style={{ marginTop: '1rem', width: '100%', padding: '1rem' }}
+                    disabled={uploading}
+                  >
+                    {uploading ? 'Subiendo...' : 'Guardar Nuevo Nodo'}
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
         </div>
       )}
