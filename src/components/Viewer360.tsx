@@ -10,7 +10,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { synthesizeSpeech } from '../services/geminiTtsService';
 import { pcmPlayer } from '../services/pcmPlayer';
 import { db } from '../firebase';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, collection } from 'firebase/firestore';
 import { SEDE_CONFIGS } from '../config/sedeConfig';
 import { findPlaceBySlug, slugify } from '../utils/slugify';
 
@@ -25,12 +25,13 @@ const NAV_PIN_HTML = `
   </div>
 `;
 
-// Pin SVG Rojo para Etiquetas
+// Ícono Amarillo para Etiquetas (Información)
 const LABEL_PIN_HTML = `
-  <div style="width: 100%; height: 100%; filter: drop-shadow(0 4px 10px rgba(239,68,68,0.5)); cursor: default; animation: float 3s ease-in-out infinite;">
-    <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%;">
-      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" fill="rgba(239,68,68,0.3)"/>
-      <circle cx="12" cy="10" r="3" fill="#ef4444"/>
+  <div style="width: 100%; height: 100%; filter: drop-shadow(0 4px 10px rgba(245,158,11,0.5)); cursor: default; animation: float 3s ease-in-out infinite;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%;">
+      <circle cx="12" cy="12" r="10" fill="rgba(245,158,11,0.2)"/>
+      <line x1="12" y1="16" x2="12" y2="12" stroke="#f59e0b"/>
+      <line x1="12" y1="8" x2="12.01" y2="8" stroke="#f59e0b"/>
     </svg>
   </div>
 `;
@@ -39,7 +40,37 @@ export default function Viewer360() {
   const { sedeId, placeSlug } = useParams<{ sedeId: string; placeSlug: string }>();
   const navigate = useNavigate();
 
-  const sede = sedeId ? SEDE_CONFIGS[sedeId] : null;
+  const [globalPlaceNames, setGlobalPlaceNames] = useState<Record<string, string>>({});
+  const [deletedNodes, setDeletedNodes] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, 'hotspots'), (snapshot) => {
+      const names: Record<string, string> = {};
+      const deleted = new Set<string>();
+      snapshot.docs.forEach(doc => {
+        const data = doc.data();
+        if (data.placeName) names[doc.id] = data.placeName;
+        if (data.deleted === true) deleted.add(doc.id);
+      });
+      setGlobalPlaceNames(names);
+      setDeletedNodes(deleted);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const sedeRaw = sedeId ? SEDE_CONFIGS[sedeId] : null;
+
+  const sede = useMemo(() => {
+    if (!sedeRaw) return null;
+    return {
+      ...sedeRaw,
+      places: sedeRaw.places.filter(p => !deletedNodes.has(p.id)).map(p => ({
+        ...p,
+        name: globalPlaceNames[p.id] || p.name
+      }))
+    };
+  }, [sedeRaw, globalPlaceNames, deletedNodes]);
+
   const place = useMemo(() => {
     if (!sede || !placeSlug) return null;
     return findPlaceBySlug(sede.places, placeSlug);
@@ -191,10 +222,10 @@ export default function Viewer360() {
           Atrás
         </button>
         <div className="viewer-title-box">
-          <span className="viewer-sede-name" style={{ color: sede.acento }}>
+          <h2 className="viewer-place-name">{place.name}</h2>
+          <span className="viewer-sede-name">
             {sede.nombre}
           </span>
-          <h2 className="viewer-place-name">{place.name}</h2>
         </div>
         <div style={{ width: '120px' }} />
       </div>
@@ -260,9 +291,10 @@ export default function Viewer360() {
         />
       </div>
 
-      {!loading && (<MiniMap currentPlace={place} allPlaces={sede.places} onNavigate={handleHotspotNavigate} mapImage={sede.mapImage || '/map_esforce.png'} />)}
+      {!loading && (<MiniMap currentPlace={place} allPlaces={sede.places} onNavigate={handleHotspotNavigate} mapImage={sede.mapImage || '/map_esforce.png'} sedeId={sedeId} />)}
+
       {!loading && (<NodeGallery currentPlace={place} allPlaces={sede.places} onNavigate={handleHotspotNavigate} currentSedeId={sede.id} />)}
-      <QuickMenu currentPlaceId={place.id} allPlaces={sede.places} onNavigate={handleHotspotNavigate} schoolName={sede.nombre} />
+      <QuickMenu currentPlaceId={place.id} allPlaces={sede.places} onNavigate={handleHotspotNavigate} schoolName={sede.nombre} sedeId={sedeId || ''} />
     </div>
   );
 }

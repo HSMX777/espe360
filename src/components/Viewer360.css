@@ -82,16 +82,16 @@
 }
 
 .viewer-sede-name {
-  color: var(--military-green);
+  color: #000000;
   font-size: 0.65rem;
   font-weight: 800;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  margin-bottom: 2px;
+  margin-top: 4px;
 }
 
 .viewer-place-name {
-  color: var(--military-slate);
+  color: var(--military-green);
   font-size: 1.3rem;
   font-weight: 900;
   text-transform: uppercase;

@@ -15,12 +15,13 @@
   text-align: center;
   margin-bottom: 2rem;
   flex-shrink: 0;
+  animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .sedes-title {
   font-size: 35px;
   font-weight: 900;
-  color: var(--military-slate);
+  color: #ffffff;
   letter-spacing: -0.02em;
   margin-bottom: 0.4rem;
   line-height: 1;
@@ -30,7 +31,7 @@
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.3em;
-  color: var(--military-green);
+  color: rgba(255, 255, 255, 0.8);
   text-transform: uppercase;
 }
 
@@ -46,16 +47,17 @@
 .sede-card {
   width: 100%;
   max-width: 280px;
-  position: relative;
-  aspect-ratio: 4 / 3;
+  display: flex;
+  flex-direction: column;
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid var(--military-border);
+  border: none;
   background: #ffffff;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   padding: 0;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  animation: cardEntrance 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .sede-card:hover {
@@ -68,15 +70,20 @@
   transform: scale(0.96);
 }
 
+.sede-card-image {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+}
+
 .sede-card-bg {
-  position: absolute;
-  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  opacity: 0.4;
-  filter: grayscale(100%);
-  transition: all 0.5s ease;
+  opacity: 1;
+  filter: saturate(1.1);
+  transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .sede-card:hover .sede-card-bg {
@@ -88,7 +95,7 @@
 .sede-card-gradient {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.4) 50%, transparent 100%);
+  background: linear-gradient(to top, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.4) 60%, transparent 100%);
 }
 
 .sede-card-content {
@@ -97,9 +104,10 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 1.5rem;
-  gap: 1rem;
+  justify-content: flex-end;
+  padding: 1rem 1.2rem;
+  background: linear-gradient(to top, rgba(255,255,255,1) 0%, rgba(255,255,255,0.85) 35%, transparent 100%);
+  gap: 0.5rem;
   z-index: 2;
 }
 
@@ -123,19 +131,19 @@
 }
 
 .sede-nombre {
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 800;
-  color: var(--military-slate);
+  color: #000000 !important;
   text-transform: uppercase;
   letter-spacing: 0.02em;
-  text-align: center;
+  text-align: center !important;
   line-height: 1.2;
 }
 
 .sede-ciudad {
   font-size: 14px;
   font-weight: 600;
-  color: var(--military-green);
+  color: #000000 !important;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   opacity: 0.8;
@@ -148,6 +156,28 @@
 .sedes-container::-webkit-scrollbar-thumb {
   background: var(--military-green);
   border-radius: 10px;
+}
+
+@keyframes cardEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (max-width: 600px) {

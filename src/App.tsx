@@ -12,7 +12,7 @@ import './index.css';
 import './components/HomePage.css';
 
 // ── Particles config ──────────────────────────────────────────────────────────
-const particlesConfig = {
+const particlesConfig = (isDark: boolean) => ({
   fullScreen: { enable: false, zIndex: 0 },
   background: { color: { value: 'transparent' } },
   fpsLimit: 120,
@@ -28,14 +28,14 @@ const particlesConfig = {
     },
   },
   particles: {
-    color: { value: ['#4D4D4D', '#666666', '#808080'] },
+    color: { value: isDark ? ['#ffffff'] : ['#4D4D4D', '#666666', '#808080'] },
     links: {
-      color: '#4D4D4D',
+      color: isDark ? '#ffffff' : '#4D4D4D',
       distance: 150,
       enable: true,
       opacity: 0.2,
       width: 1,
-      triangles: { enable: true, color: '#4D4D4D', opacity: 0.1 },
+      triangles: { enable: true, color: isDark ? '#ffffff' : '#4D4D4D', opacity: 0.1 },
     },
     move: {
       direction: 'none',
@@ -45,7 +45,7 @@ const particlesConfig = {
       speed: 2.5,
       straight: false,
     },
-    number: { density: { enable: true, area: 800 }, value: 200 },
+    number: { density: { enable: true, area: 800 }, value: isDark ? 80 : 200 },
     opacity: {
       value: { min: 0.1, max: 0.6 },
       animation: { enable: true, speed: 1, minimumValue: 0.1, sync: false },
@@ -57,9 +57,9 @@ const particlesConfig = {
     size: { value: { min: 1, max: 3 } },
   },
   detectRetina: true,
-};
+});
 
-function ParticlesBackground() {
+function ParticlesBackground({ isDark = false }: { isDark?: boolean }) {
   const [particlesInit, setParticlesInit] = useState(false);
 
   useEffect(() => {
@@ -75,7 +75,7 @@ function ParticlesBackground() {
   return (
     <Particles
       id="tsparticles"
-      options={particlesConfig as any}
+      options={particlesConfig(isDark) as any}
       particlesLoaded={particlesLoaded}
       className="particles-canvas"
     />
@@ -88,11 +88,15 @@ function HomePage() {
   return (
     <div className="home-container" onClick={() => navigate('/sedes')}>
       <div className="bg-radial-glow" />
-      <ParticlesBackground />
+      <ParticlesBackground isDark={true} />
       <div className="screen-wrapper" style={{ cursor: 'pointer' }}>
         <div className="home-content">
           <div className="logo-wrapper">
-            <img src={logoEspe} alt="ESPE – Nuestro Mundo" className="logo-image" />
+            <img 
+              src={logoEspe} 
+              alt="ESPE – Nuestro Mundo" 
+              className="logo-image" 
+            />
           </div>
           <div className="divider" />
           <p className="cta-text">Toca la pantalla para comenzar</p>
@@ -106,7 +110,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="home-container" style={{ cursor: 'default' }}>
       <div className="bg-radial-glow" />
-      <ParticlesBackground />
+      <ParticlesBackground isDark={true} />
       <div className="screen-wrapper" style={{ alignItems: 'stretch', justifyContent: 'stretch' }}>
         {children}
       </div>
@@ -133,9 +137,9 @@ export default function App() {
         <Route path="/sedes" element={<AppShell><SedesPage /></AppShell>} />
         
         {/* Admin Routes */}
-        <Route path="/admin" element={<AdminPanelWrapper />} />
-        <Route path="/admin/:sedeId" element={<AdminPanelWrapper />} />
-        <Route path="/admin/:sedeId/:placeSlug" element={<AdminPanelWrapper />} />
+        <Route path="/admin" element={<AppShell><AdminPanelWrapper /></AppShell>} />
+        <Route path="/admin/:sedeId" element={<AppShell><AdminPanelWrapper /></AppShell>} />
+        <Route path="/admin/:sedeId/:placeSlug" element={<AppShell><AdminPanelWrapper /></AppShell>} />
 
         {/* Public Routes */}
         <Route path="/:sedeId" element={<AppShell><PlacesPage /></AppShell>} />

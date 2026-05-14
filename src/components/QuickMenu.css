@@ -108,7 +108,7 @@
 }
 
 .sidebar-title {
-  color: var(--military-slate);
+  color: var(--military-green);
   font-size: 1rem;
   font-weight: 800;
   letter-spacing: 0.1em;
@@ -180,6 +180,7 @@
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   background: #ffffff;
   border: 1px solid var(--military-border);
+  text-align: left; /* Alineación forzada a la izquierda */
 }
 
 .place-item:hover {
@@ -198,6 +199,9 @@
   font-size: 0.85rem;
   font-weight: 600;
   transition: all 0.2s;
+  text-align: left; /* Asegurar que el texto largo se alinee a la izquierda */
+  flex: 1; /* Permitir que ocupe el espacio disponible */
+  margin-right: 10px;
 }
 
 .place-item.active .place-name {

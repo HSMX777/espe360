@@ -1,14 +1,46 @@
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { SEDE_CONFIGS } from '../config/sedeConfig';
 import { type Place360 } from '../data/esforcePlaces';
 import { slugify } from '../utils/slugify';
+import { db } from '../firebase';
+import { collection, onSnapshot } from 'firebase/firestore';
 import './PlacesPage.css';
 
 export default function PlacesPage() {
   const { sedeId } = useParams<{ sedeId: string }>();
   const navigate = useNavigate();
 
-  const sede = sedeId ? SEDE_CONFIGS[sedeId] : null;
+  const [globalPlaceNames, setGlobalPlaceNames] = useState<Record<string, string>>({});
+  const [deletedNodes, setDeletedNodes] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, 'hotspots'), (snapshot) => {
+      const names: Record<string, string> = {};
+      const deleted = new Set<string>();
+      snapshot.docs.forEach(doc => {
+        const data = doc.data();
+        if (data.placeName) names[doc.id] = data.placeName;
+        if (data.deleted === true) deleted.add(doc.id);
+      });
+      setGlobalPlaceNames(names);
+      setDeletedNodes(deleted);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const sedeRaw = sedeId ? SEDE_CONFIGS[sedeId] : null;
+
+  const sede = useMemo(() => {
+    if (!sedeRaw) return null;
+    return {
+      ...sedeRaw,
+      places: sedeRaw.places.filter(p => !deletedNodes.has(p.id)).map(p => ({
+        ...p,
+        name: globalPlaceNames[p.id] || p.name
+      }))
+    };
+  }, [sedeRaw, globalPlaceNames, deletedNodes]);
 
   if (!sede) {
     return (
@@ -39,7 +71,7 @@ export default function PlacesPage() {
           Volver
         </button>
         <div className="places-title-container">
-          <h1 className="places-title" style={{ color: sede.acento }}>{sede.nombre}</h1>
+          <h1 className="places-title">{sede.nombre}</h1>
           <p className="places-subtitle">LUGARES EN 360°</p>
         </div>
         <div style={{ width: '100px' }} />
@@ -48,7 +80,7 @@ export default function PlacesPage() {
       {/* Content */}
       {isAvailable ? (
         <div className="places-grid">
-          {places.map((place) => {
+          {places.map((place, index) => {
             const basePath = sede.basePath;
             const thumbUrl = `/${basePath}/thumbnails/${encodeURIComponent(place.imageFileName)}`;
             
@@ -57,7 +89,10 @@ export default function PlacesPage() {
                 key={place.id}
                 className="place-card"
                 onClick={() => handlePlaceSelect(place)}
-                style={{ '--acento': sede.acento } as React.CSSProperties}
+                style={{ 
+                  '--acento': sede.acento,
+                  animationDelay: `${index * 0.05}s`
+                } as React.CSSProperties}
               >
                 <div className="place-img-wrapper">
                   <img 
@@ -69,15 +104,10 @@ export default function PlacesPage() {
                       target.src = `/${basePath}/${encodeURIComponent(place.imageFileName)}`;
                     }}
                   />
-                  <div className="place-img-overlay" />
+
                 </div>
                 
                 <div className="place-content">
-                  <svg className="place-icon360" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
-                    <ellipse cx="12" cy="12" rx="10" ry="4" />
-                    <path d="M12 2v20" />
-                  </svg>
                   <span className="place-name">{place.name}</span>
                 </div>
               </button>

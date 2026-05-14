@@ -5,7 +5,7 @@ import '@photo-sphere-viewer/markers-plugin/index.css';
 import { type Place360 } from '../data/esforcePlaces';
 import { type Sede } from './SedesPage';
 import { db } from '../firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, query, where, getDocs } from 'firebase/firestore';
 
 interface Props {
   sede: Sede;
@@ -17,11 +17,14 @@ interface Props {
 export default function HotspotEditor({ sede, place, onClose, onNavigate }: Props) {
   const [markers, setMarkers] = useState<any[]>([]);
   const [defaultView, setDefaultView] = useState<{ yaw: number; pitch: number } | null>(null);
+  const [nodeName, setNodeName] = useState(place.name);
   const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null);
   const [isPreview, setIsPreview] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [markersPlugin, setMarkersPlugin] = useState<any>(null);
   const [viewerInstance, setViewerInstance] = useState<any>(null);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
   const intervalRef = useRef<any>(null);
   const initialViewApplied = useRef<string | null>(null);
 
@@ -38,14 +41,21 @@ export default function HotspotEditor({ sede, place, onClose, onNavigate }: Prop
           console.log("[DEBUG-VIEW] Datos recibidos de Firebase:", data);
           setMarkers(data.markers || []);
           setDefaultView(data.defaultView || null);
+          setNodeName(data.placeName || place.name);
+          
+          if (data.categoryId) {
+            setSelectedCategoryId(data.categoryId);
+          } 
         } else {
           console.log("[DEBUG-VIEW] No hay datos en Firebase, usando locales.");
           setMarkers(place.hotspots || []);
           setDefaultView(null);
+          setNodeName(place.name);
         }
       } catch (error) {
         console.error("[DEBUG-VIEW] Error cargando datos:", error);
         setMarkers(place.hotspots || []);
+        setNodeName(place.name);
       }
       setSelectedMarkerId(null);
       // Reset apply flag on place change
@@ -55,7 +65,29 @@ export default function HotspotEditor({ sede, place, onClose, onNavigate }: Prop
     };
 
     loadData();
-  }, [place.id]);
+
+    // Load categories
+    const loadCategories = async () => {
+      const q = query(collection(db, 'categories'), where('sedeId', '==', sede.id));
+      const snap = await getDocs(q);
+      const cats = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      setCategories(cats);
+    };
+    loadCategories();
+  }, [place.id, place.name, place.hotspots, sede.id]);
+
+  // Separate effect for category auto-assignment when categories load
+  useEffect(() => {
+    if (!selectedCategoryId && place.category && categories.length > 0) {
+      const foundCat = categories.find(c => c.name.toLowerCase() === place.category.toLowerCase());
+      if (foundCat) {
+        console.log(`[DEBUG] Auto-asignando categoría: ${foundCat.name} (${foundCat.id})`);
+        setSelectedCategoryId(foundCat.id);
+        // Save the link in background
+        setDoc(doc(db, "hotspots", place.id), { categoryId: foundCat.id }, { merge: true });
+      }
+    }
+  }, [categories, place, selectedCategoryId]);
 
   // Handle Initial View Positioning
   useEffect(() => {
@@ -91,6 +123,7 @@ export default function HotspotEditor({ sede, place, onClose, onNavigate }: Prop
       targetPlaceId: m.targetPlaceId,
       position: { yaw: m.yaw, pitch: m.pitch },
       html: `<div class="admin-marker ${m.type === 'label' ? 'label-type' : ''} ${selectedMarkerId === m.id ? 'selected' : ''} ${isPreview ? 'preview-mode' : ''}">
+                ${m.type === 'label' ? '<span style="font-weight: bold; font-family: serif; font-size: 14px; position: relative; z-index: 2;">i</span>' : ''}
                 <div class="marker-pulse"></div>
              </div>`,
       anchor: 'center',
@@ -104,7 +137,7 @@ export default function HotspotEditor({ sede, place, onClose, onNavigate }: Prop
     syncMarkersToPlugin();
   }, [syncMarkersToPlugin]);
 
-  const saveToFirebase = async (currentMarkers: any[], currentView?: any) => {
+  const saveToFirebase = async (currentMarkers: any[], currentView?: any, customName?: string) => {
     setIsSaving(true);
     try {
       const docRef = doc(db, "hotspots", place.id);
@@ -112,7 +145,8 @@ export default function HotspotEditor({ sede, place, onClose, onNavigate }: Prop
         markers: currentMarkers,
         defaultView: currentView || defaultView,
         lastUpdated: new Date().toISOString(),
-        placeName: place.name
+        placeName: customName !== undefined ? customName : nodeName,
+        categoryId: selectedCategoryId
       };
       console.log("[DEBUG-VIEW] Guardando en Firebase:", payload);
       await setDoc(docRef, payload, { merge: true });
@@ -223,6 +257,21 @@ export default function HotspotEditor({ sede, place, onClose, onNavigate }: Prop
       }
   };
 
+  const deleteNode = async () => {
+    if (window.confirm("¿Estás seguro de que deseas eliminar este nodo? Esta acción lo ocultará de toda la aplicación.")) {
+      setIsSaving(true);
+      try {
+        const docRef = doc(db, "hotspots", place.id);
+        await setDoc(docRef, { deleted: true }, { merge: true });
+        onClose(); // Go back to panel
+      } catch (error) {
+        console.error("Error deleting node:", error);
+      } finally {
+        setIsSaving(false);
+      }
+    }
+  };
+
   const selectedMarker = markers.find(m => m.id === selectedMarkerId);
 
   return (
@@ -236,10 +285,68 @@ export default function HotspotEditor({ sede, place, onClose, onNavigate }: Prop
             </div>
         ) : (
             <>
-                <button className="admin-btn secondary" onClick={onClose}>&larr; Volver al Panel</button>
+                <div className="editor-header-actions">
+                    <button className="editor-btn-back" onClick={onClose}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                      </svg>
+                      Volver
+                    </button>
+                    <button className="editor-btn-delete-node" onClick={deleteNode} title="Eliminar este lugar del recorrido">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                      </svg>
+                      Eliminar
+                    </button>
+                </div>
                 
                 <div className="current-info">
-                    <h3>Editando: {place.name}</h3>
+                    <div className="edit-name-group" style={{ marginBottom: '1rem' }}>
+                        <label style={{ display: 'block', fontSize: '0.8rem', color: '#94a3b8', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Nombre del Nodo</label>
+                        <input 
+                            type="text" 
+                            value={nodeName} 
+                            onChange={(e) => setNodeName(e.target.value)} 
+                            onBlur={(e) => saveToFirebase(markers, undefined, e.target.value)}
+                            style={{ 
+                                width: '100%', 
+                                padding: '0.5rem', 
+                                background: '#1e293b', 
+                                border: '1px solid #334155', 
+                                color: 'white', 
+                                borderRadius: '4px',
+                                fontSize: '1rem',
+                                fontWeight: 'bold',
+                                marginBottom: '1rem'
+                            }}
+                        />
+
+                        <label style={{ display: 'block', fontSize: '0.8rem', color: '#94a3b8', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Categoría</label>
+                        <select 
+                            value={selectedCategoryId} 
+                            onChange={(e) => {
+                                setSelectedCategoryId(e.target.value);
+                                // Save immediately
+                                const docRef = doc(db, "hotspots", place.id);
+                                setDoc(docRef, { categoryId: e.target.value }, { merge: true });
+                            }}
+                            style={{ 
+                                width: '100%', 
+                                padding: '0.5rem', 
+                                background: '#1e293b', 
+                                border: '1px solid #334155', 
+                                color: 'white', 
+                                borderRadius: '4px',
+                                fontSize: '0.9rem'
+                            }}
+                        >
+                            <option value="">-- Sin Categoría --</option>
+                            {categories.map(cat => (
+                                <option key={cat.id} value={cat.id}>{cat.name}</option>
+                            ))}
+                        </select>
+                    </div>
                     <div className="sidebar-actions">
                         <button className="admin-btn success full" onClick={() => addMarker('nav')}>+ Agregar Marcador</button>
                         <button className="admin-btn danger full" onClick={() => addMarker('label')}>+ Agregar Etiqueta (Roja)</button>

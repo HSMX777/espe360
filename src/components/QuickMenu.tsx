@@ -1,25 +1,94 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './QuickMenu.css';
 import { type Place360 } from '../data/esforcePlaces';
+import { db } from '../firebase';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
 
 interface QuickMenuProps {
   currentPlaceId: string;
   allPlaces: Place360[];
   onNavigate: (placeId: string) => void;
   schoolName?: string;
+  sedeId: string;
 }
 
-const QuickMenu: React.FC<QuickMenuProps> = ({ currentPlaceId, allPlaces, onNavigate, schoolName = 'ESFORCE' }) => {
+const QuickMenu: React.FC<QuickMenuProps> = ({ currentPlaceId, allPlaces, onNavigate, schoolName = 'ESFORCE', sedeId }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [dbCategories, setDbCategories] = useState<any[]>([]);
+  const [nodeData, setNodeData] = useState<Record<string, any>>({});
 
-  // Group places by category
-  const categories = allPlaces.reduce((acc, place) => {
-    if (!acc[place.category]) {
-      acc[place.category] = [];
-    }
-    acc[place.category].push(place);
-    return acc;
-  }, {} as Record<string, Place360[]>);
+  // Fetch categories from Firestore
+  useEffect(() => {
+    if (!sedeId) return;
+    const sedeQuery = query(collection(db, 'categories'), where('sedeId', '==', sedeId));
+    const unsubscribe = onSnapshot(sedeQuery, (snapshot) => {
+      const cats = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setDbCategories(cats);
+    });
+    return () => unsubscribe();
+  }, [sedeId]);
+
+  // Fetch individual node metadata (categoryId) from hotspots collection
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, 'hotspots'), (snapshot) => {
+      const data: Record<string, any> = {};
+      snapshot.docs.forEach(doc => {
+        data[doc.id] = doc.data();
+      });
+      setNodeData(data);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Build an ORDERED array of { category, places } respecting Firestore order field
+  const groupedCategories = React.useMemo(() => {
+    // Map of categoryId -> category object (sorted by order)
+    const sortedCats = [...dbCategories].sort((a, b) => {
+      if (a.order !== undefined && b.order !== undefined) return a.order - b.order;
+      return a.name.localeCompare(b.name);
+    });
+
+    // Build groups as an ordered array
+    const groups: { catName: string; catId: string | null; places: Place360[] }[] = [];
+    const catMap: Record<string, number> = {}; // catName -> index in groups
+
+    sortedCats.forEach(cat => {
+      catMap[cat.name] = groups.length;
+      groups.push({ catName: cat.name, catId: cat.id, places: [] });
+    });
+
+    // Place nodes into their groups
+    allPlaces.forEach(place => {
+      const dynamicData = nodeData[place.id];
+      const categoryId = dynamicData?.categoryId;
+      const dbCat = dbCategories.find(c => c.id === categoryId);
+
+      // Resolve category name
+      const catName = dbCat?.name || place.category || 'SIN CATEGORÍA';
+      
+      const enrichedPlace = {
+        ...place,
+        name: dynamicData?.placeName || place.name,
+        _order: dynamicData?.order ?? 9999,
+      };
+
+      if (catMap[catName] !== undefined) {
+        groups[catMap[catName]].places.push(enrichedPlace as any);
+      } else {
+        // Category not in Firestore yet — append at end
+        groups.push({ catName, catId: null, places: [enrichedPlace as any] });
+        catMap[catName] = groups.length - 1;
+      }
+    });
+
+    // Sort places within each category by their order field
+    groups.forEach(g => {
+      g.places.sort((a, b) => ((a as any)._order ?? 9999) - ((b as any)._order ?? 9999));
+    });
+
+    return groups;
+  }, [allPlaces, dbCategories, nodeData]);
+
 
   return (
     <>
@@ -47,9 +116,9 @@ const QuickMenu: React.FC<QuickMenuProps> = ({ currentPlaceId, allPlaces, onNavi
         </div>
 
         <div className="sidebar-content">
-          {Object.entries(categories).map(([category, places]) => (
-            <div key={category} className="menu-category-group">
-              <h4 className="category-label">{category}</h4>
+          {groupedCategories.map(({ catName, places }) => (
+            <div key={catName} className="menu-category-group">
+              <h4 className="category-label">{catName}</h4>
               <ul className="places-list">
                 {places.map((place) => (
                   <li 
